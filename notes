@@ -1,0 +1,37 @@
+II. Major Technical Objectives  1
+
+1. Simplify backend architecture to ensure it’s manageable for only one engineer.
+2. Ensure critical but expensive queries are still performant while we scale.
+3. Employ real time analytics.
+
+III. Our Approach 3
+
+Our Approach (Simplifying Existing Architecture) 3
+
+[old vs new diagram of architecture]
+
+Our Approach (Choosing the Right Persistence Layer) 3
+
+  1. a. postgres -> mongodb -> neo4j
+     b. deprecate need for rails, redis
+     c. move from ElasticSearch to Algolia
+
+  2. a. main feed was a very very expensive query but had to be real time
+        graph db was critical in implementing this in a simple way maintaining performance
+        challenge was to add a custom database query layer over limit ruby neo4j lib used
+        (eventually wrote Go based database driver for Neo4j)
+
+[diagram of feed query]
+
+Our Approach (Real Time Analytics) 3
+
+  3. a. Go + Aerospike real time analytics service with web sockets
+
+IV. Results of the Case
+
+V. Lessons Learned   3
+
+1. small team and simple architecture and low technical management overhead is key to velocity
+2. technology choice is heavily based on your constraints
+
+VI. Additional Notes, CTO at actify.de, brewswap.co, drinkeasy.co

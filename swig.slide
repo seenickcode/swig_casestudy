@@ -1,0 +1,125 @@
+
+swig.co
+Building a Social Network
+11 Nov 2016
+
+Nicholas Manning
+Co-Founder & CTO at Swig Labs Inc.
+nicholas.manning@gmail.com
+http://www.swig.co
+@seenickcode
+
+* Challenge
+
+Develop a social photo sharing platform for craft drink enthusiasts.
+
+* The Product
+
+.html screenshots1.html
+
+* The Product
+
+.html screenshots2.html
+
+* The Product
+
+.html screenshots3.html
+
+* Challenge 1
+
+Simplify our architecture.
+
+Existing: Heroku + Ruby on Rails + Redis + Elastic Search + Postgres
+
+Problems:
+
+- Main "Feed query" was too slow at scale.
+  "fetch everyone I follow, fetch their posts, sort, hydrate"
+- A relational database wasn't suited for this (too many joins).
+
+* Challenge 1
+
+Simplify our architecture (cont'd):
+
+- We moved to Redis, but this introduced too much complexity and bugs.
+  "maintain and cache all user feeds, then hydrate when fetched"
+- "There are only two hard things in Computer Science: cache invalidation and naming things." -- Phil Karlton
+
+* New Architecture: Ruby/Go + Algolia + Neo4j
+
+Our solution:
+
+- Switched to Neo4j (a graph database).
+- Query performance isn't hurt by volume of data, only by _how far_ one traverses the graph.
+- Joins are cheap. Our query became a simple graph traversal.
+
+.caption see services/feed.rb at https://github.com/shindighq/shindig_classy
+
+.image graphexample1.jpg 250 _
+
+* New Architecture: Ruby/Go + Algolia + Neo4j
+
+.image graphscreenshot1.png 500 _
+
+.caption the Neo4j query tool
+
+* Challenge 2
+
+Employ real time analytics:
+
+We wanted to show real time view count for photos.
+
+.image screenshot16.png _ 240
+
+* Challenge 2
+
+Solution:
+
+- Develop a web socket based service that would track view counts
+- Report counts back to device
+- Manage large volume of data and support fast reads/writes
+
+.caption see https://github.com/shindighq/swig_analytics
+
+* Challenge 2
+
+Solution (cont'd): Go + Aerospike
+
+- Go for simplicity, speed and ease of use and management in production
+- Aerospike (a key-value store) for fast read/writes
+- Live for 2 years with 0% downtime
+
+.html logos1.html
+
+* Challenge 3
+
+Leverage Go in production with Neo4j:
+
+Problems:
+
+- During the time, wasn't very good driver support for Neo4j
+
+* Challenge 3
+
+Solution:
+
+- Wrote a Neo4j database driver for Go
+- github.com/seenickcode/gopherneo
+
+* How We Increased Stability and Performance
+
+Graceful failure mechanisms
+
+Test coverage isn't everything
+
+Jmeter for load tests
+
+Proper log monitoring
+
+* Final Thoughts
+
+Simple architecture is key.
+
+Always be open to newer technologies if they're worth it.
+
+Small, specialized teams should be a goal, not a limitation.
