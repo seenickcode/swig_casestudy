@@ -4,7 +4,7 @@ Building a Social Network
 11 Nov 2016
 
 Nicholas Manning
-Co-Founder & CTO at Swig Labs Inc.
+Co-Founder / CTO at Swig Labs Inc.
 nicholas.manning@gmail.com
 http://www.swig.co
 @seenickcode
@@ -12,6 +12,18 @@ http://www.swig.co
 * Challenge
 
 Develop a social photo sharing platform for craft drink enthusiasts.
+
+Flow:
+- Take a photo of your drink.
+- Tag it with your location, friends, what you think of the drink.
+- Share and explore your city for the best beers, cocktails, wines and spirits.
+
+Profit Model:
+- Build a "taste graph" and sell that data to drink brands.
+
+* The Product
+
+.html screenshots3.html
 
 * The Product
 
@@ -21,105 +33,113 @@ Develop a social photo sharing platform for craft drink enthusiasts.
 
 .html screenshots2.html
 
-* The Product
+* Challenge 1: Simplify existing architecture
 
-.html screenshots3.html
+Stack: Ruby on Rails, Redis, Elastic Search, Postgres
 
-* Challenge 1
+Problem 1, Queries Didn't Scale:
 
-Simplify our architecture.
-
-Existing: Heroku + Ruby on Rails + Redis + Elastic Search + Postgres
-
-Problems:
-
-- Main "Feed query" was too slow at scale.
-  "fetch everyone I follow, fetch their posts, sort, hydrate"
+- Queries such as "fetch photo news feed", "fetch latest posts for user", etc was too slow at scale.
+- "fetch everyone I follow, fetch their posts, sort, truncate, hydrate"
 - A relational database wasn't suited for this (too many joins).
+- Too slow for SQL or MongoDB*
 
-* Challenge 1
+.caption * we had moved from SQL to MongoDB for convenience
 
-Simplify our architecture (cont'd):
+* Challenge 1: Simplify existing architecture
 
-- We moved to Redis, but this introduced too much complexity and bugs.
-  "maintain and cache all user feeds, then hydrate when fetched"
-- "There are only two hard things in Computer Science: cache invalidation and naming things." -- Phil Karlton
+Problem 2, Caching Our Feed Query Was Too Complex:
 
-* New Architecture: Ruby/Go + Algolia + Neo4j
+- We moved to Redis and maintained user feed there.
+- This introduced too much complexity and bugs.
+- Difficult to troubleshoot.
 
-Our solution:
+.caption "There are only two hard things in Computer Science: cache invalidation and naming things." -- Phil Karlton
 
-- Switched to Neo4j (a graph database).
-- Query performance isn't hurt by volume of data, only by _how far_ one traverses the graph.
-- Joins are cheap. Our query became a simple graph traversal.
+* Challenge 1: Simplify existing architecture
+
+Solution:
+
+- Switched to a graph database (Neo4j + Neoism Ruby driver), pure Ruby (Sinatra), Algolia
+- Deprecated Redis, SQL/MongoDB, Rails, ElasticSearch
+- Gained: flexibility of NoSQL model (schemaless) and benefits of graph queries.
+- Our queries became a simple graph traversal.
+
+.caption with graph database, query performance isn't hurt by volume of data, only by how deeply one traverses the graph.
 
 .caption see services/feed.rb at https://github.com/shindighq/shindig_classy
 
-.image graphexample1.jpg 250 _
+.image graphexample1.jpg 200 _
 
-* New Architecture: Ruby/Go + Algolia + Neo4j
+* Challenge 1: Simplify existing architecture
 
 .image graphscreenshot1.png 500 _
 
 .caption the Neo4j query tool
 
-* Challenge 2
-
-Employ real time analytics:
+* Challenge 2: Real Time View Counts
 
 We wanted to show real time view count for photos.
 
-.image screenshot16.png _ 240
+.image screenshot16.png _ 280
 
-* Challenge 2
+* Challenge 2: Real Time View Counts
+
+We wanted to show real time view count for photos.
+
+Problem:
+
+- Users wanted to see how many "views" their photos had.
+- Needed to show "real-time" view counts.
+- Avoid overcomplicating our existing API.
+
+* Challenge 2: Real Time View Counts
+
+Challenge:
+
+- Deploy an entirely separate service that could be used.
+- "Graceful fallback" if service went down.
+- Leverage web sockets
+- Manage large volume of data and support fast reads/writes.
+
+.caption see hub.go at https://github.com/shindighq/swig_analytics
+
+* Challenge 2: Real Time View Counts
 
 Solution:
 
-- Develop a web socket based service that would track view counts
-- Report counts back to device
-- Manage large volume of data and support fast reads/writes
-
-.caption see https://github.com/shindighq/swig_analytics
-
-* Challenge 2
-
-Solution (cont'd): Go + Aerospike
-
-- Go for simplicity, speed and ease of use and management in production
+- Used Go (exploring new technology at our startup with a "low risk" feature).
 - Aerospike (a key-value store) for fast read/writes
-- Live for 2 years with 0% downtime
+- Feature was been live for 2 years with 0% downtime
 
 .html logos1.html
 
-* Challenge 3
-
-Leverage Go in production with Neo4j:
+* Challenge 3: Write a Database Driver
 
 Problems:
 
-- During the time, wasn't very good driver support for Neo4j
+- During that time, there wasn't very good driver support for Neo4j + Go
+- Ideally craft a flexible Neo4j driver for Go
 
-* Challenge 3
+* Challenge 3: Write a Database Driver
+
+Challenges:
+
+- Craft a flexible driver for a statically typed language
+- Difficult to cleanly come up with SQL query construction approach
+- Difficult to handle many different types of query results: ("select *, select t1.*, t2.*, etc")
+
+.caption see FindNodesPaginated() at node.go at https://github.com/seenickcode/gopherneo
 
 Solution:
 
-- Wrote a Neo4j database driver for Go
 - github.com/seenickcode/gopherneo
 
-* How We Increased Stability and Performance
+* Lessons Learned
 
-Graceful failure mechanisms
-
-Test coverage isn't everything
-
-Jmeter for load tests
-
-Proper log monitoring
-
-* Final Thoughts
-
-Simple architecture is key.
-
-Always be open to newer technologies if they're worth it.
-
-Small, specialized teams should be a goal, not a limitation.
+- Simple architecture with low management overhead is key to velocity.
+- Always be thinking about how to scale to your next "order of magnitude"
+- Don't shy away from new technologies, but make sure they'll be worth investing in.
+- Can you get to 80-90% of the development goal without sacrificing complexity?
+- Be ready to throw away old code regularly.
+- Don't be fixated on one specific tech stack.
